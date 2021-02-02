@@ -1,84 +1,66 @@
-import math
+def to_base_10(num: str, from_base: int, key="0123456789abcdefghijklmnopqrstuvwxyz", digits=100, minus_sign="-") -> int:
+    """Convert a num in from_base to base 10."""
+    if len(key) < from_base:
+        raise ValueError("Must have key length > base")
 
-def basechange_to10(first_input: str, first_base: int, first_key = "0123456789abcdefghijklmnopqrstuvwxyz", digits = 100):
-    '''Converts a base (first_base) number to base 10, assuming the key for the first base is (first_key),
-    Requirements: key >= first_base, all digits of first_input are in first_key'''
-    if first_input == first_key[0]:
+    if num == key[0]:
         return 0
-    
-    output = 0
-    
-    for index in range(len(first_input)):
-        output += first_base**(len(first_input) - index - 1) * (key.index(first_input[index]))
-        
-    return output
-    
 
-
-
-def basechange_from10(number, new_base:int, key:str , digits = 100):
-    """Converts a base 10 number to a new base, 
-    with the digits in the new base corresponding to that index of the key"""
-
-    message = ""
-
-    if number < 0: # switches negative numbers to positive, sets variable to be converted back at end
-        number = -number
-        num_is_negative = True
+    if num[0] == minus_sign:
+        sign = -1
     else:
-        num_is_negative = False
+        sign = 1
 
-    decimals = number % 1 #decimals = All digits less than 1
+    new_num = 0
+    num_length = len(num)
 
-    if decimals != 0:
-        number = number - decimals
-        message = "."
+    for i in range(num_length):
+        try:
+            new_digit = key.index(num[i])
+        except ValueError:
+            raise ValueError("digit, " + str(num[i]) + ", not in key")
+        new_num += from_base ** (num_length - i - 1) * new_digit
 
-        for i in range(digits):
-            #For each digits in the final result, multiply by the base to find the number of whole units of that digit.
-            entry = int(math.floor(decimals * new_base))
-            message = message + key[int(entry)]
-            decimals = new_base * decimals - entry
+    return new_num * sign
 
-    if number == 0:#returns 0 if number == 0
+
+def from_base_10(num, new_base: int, key: str, digits=100, minus_sign="-") -> str:
+    """Convert num, a base 10 number to new_base."""
+    if new_base <= 1:
+        raise TypeError("new_base <= 1")
+    elif not (isinstance(num, int) or isinstance(num, float)):
+        raise TypeError("num must be float or int type")
+
+    new_num = ""
+
+    if num == 0:
         return key[0]
+    elif num < 0:
+        num = -num
+    else:
+        minus_sign = ""
 
-    while number >= 1:#repeats until number is totally reduced
-        remainder = int(number % new_base)
-        message = key[remainder] + message
-        number = (number - remainder)/new_base
+    decimals = num % 1  # All digits less than 1
+    if decimals != 0:
+        num = num - decimals
+        new_num += "."
+        for _ in range(digits):
+            entry = int(decimals * new_base)  # Number of decimal units in 1/base digit
+            new_num = new_num + key[entry]
+            decimals = new_base * decimals - entry  # Shift left
 
-    if num_is_negative:#adds back the - sign
-        message = "-" + message
+    while num >= 1:  # Until num is reduced
+        remainder = int(num % new_base)
+        new_num = key[remainder] + new_num
+        num = (num - remainder) / new_base
 
-    return message
+    return minus_sign + new_num
 
-def basechange(first_input:str, first_base: int, first_key, new_base:int, new_key:str = ""):
-    if new_key =="":
-        new_key = first_key
-        
-    number = basechange_to10(first_input, first_base,first_key)
-    return basechange_from10(number,new_base, new_key)
 
-if __name__ == "__main__":
-    print("Converts a number in base 10 to a new base:\n")
-    number = float(input("Your input number:\n").strip())
-    new_base = int(input("Your new base:\n").strip())
-    key = "0123456789abcdefghijklmnopqrstuvwxyz"
-    print("The new number is: ", basechange_from10(number, new_base, key))
+def basechange(num: str, first_base: int, end_base: int, first_key="0123456789abcdefghijklmnopqrstuvwxyz", end_key="", minus_sign="-"):
+    """Convert num from first_base to end_base given corresponding keys."""
+    if end_key == "":
+        end_key = first_key
 
-    print("____________________________________________________________________")
-
-    print("Converts a number in a base to base 10:\n")
-    number = input("Your input number:\n").strip()
-    new_base = int(input("The base:\n").strip())
-    key = "0123456789abcdefghijklmnopqrstuvwxyz"
-    print("The number in base 10", basechange_to10(number, new_base, key))
-    print("____________________________________________________________________")
-   
-    print("Converts a number in any base to a new base:\n")
-    number = input("Your input number:\n").strip()
-    first_base = int(input("The original base:\n").strip())
-    second_base = int(input("The new base:\n").strip())
-    key = "0123456789abcdefghijklmnopqrstuvwxyz"
-    print("The final number:", basechange(number, first_base, key, second_base))
+    intermediate = to_base_10(num, first_base, first_key, minus_sign)
+    return from_base_10(intermediate, end_base, end_key, minus_sign)
